@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+
+</head>
+<body>
+<input id="sendval" size=20 />
+    <div class="sendbutton">click to send</div>
+<BR>
+    <BR>
+    <div class="output">output here</div>
+<BR>
+    <div class="receivebutton">click to poll</div>
+
+
+<script>
+
+
+var key = ""; // put AIO key here
+
+$(document).ready(function(){
+  console.log("ready");
+
+  //Send
+  // https://io.adafruit.com/api/groups/weather/send.json?x-aio-key=a052ecc32b2de1c80abc03bd471acd1d6b218e5c&temperature=13&humidity=12&wind=45
+
+  var group = "jukebox";
+  var feedname= "current_song";
+
+  function send_jukebox(value){
+    var sendurl = "https://io.adafruit.com/api/groups/jukebox/send.json?x-aio-key="+key+"&"+feedname+"="+value;
+    $.ajax({
+      url : sendurl,
+      success: function(data){
+         console.log("send success");
+         console.log(data);
+      },
+      error: function (error){
+        console.log("recieve error");
+        console.log(error);
+      }
+    });
+  }
+
+
+  var prev_stream_id = false;
+  function poll_jukebox(callback){
+    var receiveurl = "https://io.adafruit.com/api/groups/"+group+"/receive.json?x-aio-key="+key
+    $.ajax({
+      url : receiveurl,
+      success: function(data){
+         console.log("receive success");
+         console.log(data);
+         var stream = false;
+         var feeds = data.feeds.filter(function(f){return f.name = feedname});
+         if(feeds.length > 0){
+            stream = feeds[0].stream;
+            if(prev_stream_id != stream.id){
+              prev_stream_id = stream.id;
+              callback(stream.value);
+            }else{
+            //    console.log("same value");
+            }
+         }
+      },
+      error: function (error){
+        console.log("recieve error");
+        console.log(error);
+      }
+    });
+  }
+
+  function new_poll_value(value){
+    console.log("showing new value");
+    $(".output").append(value + "<BR>");
+  }
+
+  $(".sendbutton").click(function(){
+    var value = $("#sendval").val();
+    console.log("sending " + value);
+    send_jukebox(value);
+  });
+
+  $(".receivebutton").click(function(){
+     poll_jukebox(new_poll_value);
+  });
+
+  setInterval(function(){poll_jukebox(new_poll_value);}, 3000);
+
+// receive
+//https://io.adafruit.com/api/groups/weather/receive.json?x-aio-key=a052ecc32b2de1c80abc03bd471acd1d6b218e5c
+
+
+});
+</script>
+
+</body>
+
+</html>
+
+
